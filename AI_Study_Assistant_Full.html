@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Study Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);min-height:100vh;color:#2d3748;}
+
+  /* HEADER */
+  header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:40px 24px 50px;text-align:center;position:relative;overflow:hidden;}
+  header::before{content:'';position:absolute;width:400px;height:400px;background:rgba(255,255,255,0.07);border-radius:50%;top:-120px;left:-80px;}
+  header::after{content:'';position:absolute;width:300px;height:300px;background:rgba(255,255,255,0.07);border-radius:50%;bottom:-100px;right:-60px;}
+  .header-badge{display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:6px 18px;font-size:0.78rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;}
+  header h1{font-size:2.6rem;font-weight:700;letter-spacing:-0.5px;}
+  header h1 span{color:#c4b5fd;}
+  header p{margin-top:10px;font-size:1rem;opacity:0.85;font-weight:300;}
+
+  /* TOPIC SELECTOR */
+  .topic-bar{background:#fff;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.07);position:sticky;top:0;z-index:200;}
+  .topic-bar-label{font-size:0.75rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;text-align:center;}
+  .topic-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .topic-btn{background:#f5f3ff;border:1.5px solid #e0e7ff;color:#4f46e5;border-radius:999px;padding:7px 16px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+  .topic-btn:hover,.topic-btn.active{background:#4f46e5;color:#fff;border-color:#4f46e5;box-shadow:0 4px 12px rgba(79,70,229,0.3);transform:translateY(-2px);}
+
+  /* NAV */
+  nav{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:18px 24px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+  nav a{text-decoration:none;color:#4f46e5;font-weight:500;font-size:0.85rem;padding:7px 18px;border-radius:999px;border:1.5px solid #e0e7ff;background:#fff;transition:all 0.2s;}
+  nav a:hover{background:#4f46e5;color:#fff;border-color:#4f46e5;}
+
+  /* MAIN */
+  main{max-width:980px;margin:0 auto;padding:40px 24px 80px;display:flex;flex-direction:column;gap:36px;}
+
+  /* CURRENT TOPIC BANNER */
+  .topic-banner{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:16px;padding:22px 28px;color:#fff;display:flex;align-items:center;gap:16px;}
+  .topic-banner-icon{font-size:2rem;}
+  .topic-banner h3{font-size:1.3rem;font-weight:700;}
+  .topic-banner p{font-size:0.88rem;opacity:0.8;margin-top:4px;}
+
+  /* CARDS */
+  .card{background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.07);overflow:hidden;transition:transform 0.3s,box-shadow 0.3s;}
+  .card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.1);}
+  .card-header{display:flex;align-items:center;gap:14px;padding:22px 28px;border-bottom:1px solid #f1f5f9;}
+  .card-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;flex-shrink:0;}
+  .card-header h2{font-size:1.15rem;font-weight:700;}
+  .card-header p{font-size:0.8rem;color:#94a3b8;margin-top:2px;}
+  .card-body{padding:26px;}
+
+  /* SECTION COLORS */
+  .section-explain .card-icon{background:#ede9fe;}
+  .section-explain .card-header{border-left:4px solid #7c3aed;}
+  .section-explain .card-header h2{color:#5b21b6;}
+  .section-summary .card-icon{background:#e0f2fe;}
+  .section-summary .card-header{border-left:4px solid #0284c7;}
+  .section-summary .card-header h2{color:#0369a1;}
+  .section-mcq .card-icon{background:#dcfce7;}
+  .section-mcq .card-header{border-left:4px solid #16a34a;}
+  .section-mcq .card-header h2{color:#15803d;}
+  .section-short .card-icon{background:#fff7ed;}
+  .section-short .card-header{border-left:4px solid #ea580c;}
+  .section-short .card-header h2{color:#c2410c;}
+
+  /* EXPLANATION */
+  .explain-text{font-size:0.95rem;line-height:1.85;color:#475569;margin-bottom:18px;}
+  .explain-text strong{color:#1e293b;}
+  .key-concepts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:6px;}
+  .concept-chip{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:14px 16px;font-size:0.87rem;font-weight:600;color:#5b21b6;}
+  .concept-chip span{display:block;font-size:0.77rem;color:#94a3b8;font-weight:400;margin-top:4px;}
+  .info-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:0.88rem;}
+  .info-table th{background:#f5f3ff;color:#5b21b6;padding:10px 14px;text-align:left;font-weight:600;border:1px solid #e9d5ff;}
+  .info-table td{padding:10px 14px;border:1px solid #ede9fe;color:#475569;vertical-align:top;}
+  .info-table tr:nth-child(even) td{background:#faf5ff;}
+  .code-block{background:#1e1b4b;border-radius:12px;padding:16px 20px;margin-top:14px;font-family:'Courier New',monospace;font-size:0.84rem;color:#c4b5fd;line-height:1.7;overflow-x:auto;}
+  .code-block .kw{color:#818cf8;}
+  .code-block .str{color:#6ee7b7;}
+  .code-block .cm{color:#64748b;}
+
+  /* SUMMARY */
+  .summary-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .summary-list li{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;background:#f8fafc;border-radius:12px;font-size:0.91rem;color:#475569;line-height:1.65;}
+  .bullet-dot{width:10px;height:10px;background:#0284c7;border-radius:50%;flex-shrink:0;margin-top:6px;}
+
+  /* MCQ */
+  .mcq-list{display:flex;flex-direction:column;gap:22px;}
+  .mcq-q{font-weight:600;font-size:0.94rem;color:#1e293b;margin-bottom:12px;}
+  .mcq-q span{color:#16a34a;margin-right:6px;}
+  .options{display:flex;flex-direction:column;gap:8px;}
+  .option{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;border:1.5px solid #e2e8f0;cursor:pointer;font-size:0.88rem;color:#475569;transition:all 0.2s;user-select:none;}
+  .option:hover{border-color:#16a34a;background:#f0fdf4;color:#15803d;}
+  .option.correct{border-color:#16a34a;background:#f0fdf4;color:#15803d;font-weight:600;}
+  .option-letter{width:26px;height:26px;border-radius:50%;background:#e2e8f0;display:grid;place-items:center;font-size:0.77rem;font-weight:700;flex-shrink:0;}
+  .option.correct .option-letter{background:#16a34a;color:#fff;}
+
+  /* SHORT ANSWER */
+  .sa-list{display:flex;flex-direction:column;gap:22px;}
+  .sa-q{font-weight:600;font-size:0.94rem;color:#1e293b;margin-bottom:10px;}
+  .sa-q span{color:#ea580c;margin-right:6px;}
+  .sa-input{width:100%;min-height:88px;padding:14px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-family:'Inter',sans-serif;font-size:0.9rem;color:#334155;background:#f8fafc;resize:vertical;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+  .sa-input:focus{border-color:#ea580c;box-shadow:0 0 0 3px rgba(234,88,12,0.12);background:#fff;}
+  .sa-input::placeholder{color:#cbd5e1;}
+
+  /* BUTTONS */
+  .btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;}
+  .btn{padding:10px 24px;border-radius:999px;font-weight:600;font-size:0.87rem;cursor:pointer;border:none;transition:all 0.25s;font-family:'Inter',sans-serif;}
+  .btn-primary{background:#4f46e5;color:#fff;}
+  .btn-primary:hover{background:#3730a3;transform:translateY(-2px);box-shadow:0 6px 16px rgba(79,70,229,0.35);}
+  .btn-outline{background:transparent;color:#4f46e5;border:1.5px solid #c7d2fe;}
+  .btn-outline:hover{background:#eef2ff;}
+
+  /* PROGRESS */
+  .progress-wrap{margin-bottom:18px;}
+  .progress-label{font-size:0.8rem;color:#94a3b8;margin-bottom:6px;display:flex;justify-content:space-between;}
+  .progress-bar{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:999px;}
+
+  /* FOOTER */
+  footer{text-align:center;padding:26px;font-size:0.82rem;color:#94a3b8;background:#fff;border-top:1px solid #f1f5f9;}
+  footer strong{color:#4f46e5;}
+
+  /* HIDDEN */
+  .topic-content{display:none;}
+  .topic-content.active{display:block;}
+
+  @media(max-width:600px){
+    header h1{font-size:1.9rem;}
+    .key-concepts{grid-template-columns:1fr 1fr;}
+    .topic-btn{font-size:0.75rem;padding:6px 12px;}
+    .info-table{font-size:0.8rem;}
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-badge">✦ Powered by AI</div>
+  <h1>AI Study <span>Assistant</span></h1>
+  <p>Master CS fundamentals — Databases, Data Structures & Algorithms 🎓</p>
+</header>
+
+<!-- TOPIC SELECTOR -->
+<div class="topic-bar">
+  <div class="topic-bar-label">📚 Select a Topic</div>
+  <div class="topic-pills">
+    <button class="topic-btn active" onclick="showTopic('db-norm',this)">🗄️ DB Normalization</button>
+    <button class="topic-btn" onclick="showTopic('pk-fk',this)">🔑 PK vs FK</button>
+    <button class="topic-btn" onclick="showTopic('sql-joins',this)">🔗 SQL Joins</button>
+    <button class="topic-btn" onclick="showTopic('acid',this)">⚗️ ACID Properties</button>
+    <button class="topic-btn" onclick="showTopic('ds',this)">📦 Data Structures</button>
+    <button class="topic-btn" onclick="showTopic('stack-queue',this)">📚 Stack vs Queue</button>
+    <button class="topic-btn" onclick="showTopic('linked-list',this)">🔗 Linked List</button>
+    <button class="topic-btn" onclick="showTopic('binary-tree',this)">🌳 Binary Trees</button>
+    <button class="topic-btn" onclick="showTopic('big-o',this)">⏱️ Time Complexity</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#explain">📖 Explanation</a>
+  <a href="#summary">📝 Summary</a>
+  <a href="#mcq">✅ MCQ</a>
+  <a href="#short">💬 Short Answer</a>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════
+     TOPIC CONTENT BLOCKS
+══════════════════════════════ -->
+
+<!-- ─── 1. DATABASE NORMALIZATION ─── -->
+<div id="db-norm" class="topic-content active">
+  <div class="topic-banner"><div class="topic-banner-icon">🗄️</div><div><h3>Database Normalization</h3><p>Organizing database tables to reduce redundancy and improve integrity</p></div></div>
+
+  <section class="card section-explain" id="explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text"><strong>Database Normalization</strong> is the process of structuring a relational database to minimize data redundancy and avoid data anomalies (insertion, update, deletion). It involves decomposing large tables into smaller, well-structured tables linked by relationships.</p>
+      <p class="explain-text">Normalization follows a series of <strong>Normal Forms (NF)</strong>, each building on the previous one:</p>
+      <table class="info-table">
+        <tr><th>Normal Form</th><th>Rule</th><th>Example Fix</th></tr>
+        <tr><td><strong>1NF</strong></td><td>Atomic values; no repeating groups; each column holds single values</td><td>Split "Phone1, Phone2" into separate rows</td></tr>
+        <tr><td><strong>2NF</strong></td><td>1NF + No partial dependencies (all non-key columns depend on the full primary key)</td><td>Move student name out of an order table</td></tr>
+        <tr><td><strong>3NF</strong></td><td>2NF + No transitive dependencies (non-key columns depend only on the PK)</td><td>Move city info to a separate ZIP table</td></tr>
+        <tr><td><strong>BCNF</strong></td><td>Stricter 3NF — every determinant must be a candidate key</td><td>Resolve instructor-course conflicts</td></tr>
+      </table>
+      <div class="key-concepts">
+        <div class="concept-chip">📋 1NF <span>Atomic columns</span></div>
+        <div class="concept-chip">📋 2NF <span>No partial deps</span></div>
+        <div class="concept-chip">📋 3NF <span>No transitive deps</span></div>
+        <div class="concept-chip">📋 BCNF <span>Candidate key rule</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-summary" id="summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div>Normalization reduces data redundancy and prevents anomalies (insert/update/delete issues).</li>
+        <li><div class="bullet-dot"></div><strong>1NF:</strong> Each column must have atomic (indivisible) values; no repeating groups allowed.</li>
+        <li><div class="bullet-dot"></div><strong>2NF:</strong> Must be in 1NF; every non-key attribute must depend on the entire primary key (remove partial dependencies).</li>
+        <li><div class="bullet-dot"></div><strong>3NF:</strong> Must be in 2NF; no non-key attribute should depend on another non-key attribute (remove transitive dependencies).</li>
+        <li><div class="bullet-dot"></div><strong>BCNF:</strong> A stronger version of 3NF where every functional determinant is a candidate key.</li>
+        <li><div class="bullet-dot"></div>Denormalization is sometimes applied intentionally to improve read performance at the cost of redundancy.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq" id="mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which normal form removes partial dependencies?</div><div class="options"><div class="option"><div class="option-letter">A</div>1NF</div><div class="option correct"><div class="option-letter">B</div>2NF ✓</div><div class="option"><div class="option-letter">C</div>3NF</div><div class="option"><div class="option-letter">D</div>BCNF</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> What does 1NF require?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Atomic column values ✓</div><div class="option"><div class="option-letter">B</div>No transitive dependencies</div><div class="option"><div class="option-letter">C</div>Every determinant is a candidate key</div><div class="option"><div class="option-letter">D</div>No foreign keys</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Transitive dependency is removed in which normal form?</div><div class="options"><div class="option"><div class="option-letter">A</div>1NF</div><div class="option"><div class="option-letter">B</div>2NF</div><div class="option correct"><div class="option-letter">C</div>3NF ✓</div><div class="option"><div class="option-letter">D</div>4NF</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short" id="short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> What is the difference between 2NF and 3NF?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> Give a real-world example where normalization prevents a data anomaly.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q3.</span> Why might a developer choose to denormalize a database?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 2. PRIMARY KEY vs FOREIGN KEY ─── -->
+<div id="pk-fk" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">🔑</div><div><h3>Primary Key vs Foreign Key</h3><p>Understanding relational integrity constraints</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text">A <strong>Primary Key (PK)</strong> uniquely identifies each record in a table. No two rows can have the same PK value and it cannot be NULL. A <strong>Foreign Key (FK)</strong> is a column (or set of columns) in one table that references the Primary Key of another table, establishing a link between the two tables.</p>
+      <table class="info-table">
+        <tr><th>Feature</th><th>Primary Key</th><th>Foreign Key</th></tr>
+        <tr><td>Purpose</td><td>Uniquely identifies a row</td><td>Links two tables together</td></tr>
+        <tr><td>Uniqueness</td><td>Must be unique</td><td>Can have duplicates</td></tr>
+        <tr><td>NULL values</td><td>Not allowed</td><td>Allowed (optional)</td></tr>
+        <tr><td>Count per table</td><td>Only one PK per table</td><td>Can have multiple FKs</td></tr>
+        <tr><td>References</td><td>Self-contained</td><td>References PK of another table</td></tr>
+      </table>
+      <div class="code-block"><span class="cm">-- Primary Key</span><br>CREATE TABLE Students (<br>&nbsp;&nbsp;StudentID INT <span class="kw">PRIMARY KEY</span>,<br>&nbsp;&nbsp;Name VARCHAR(100)<br>);<br><br><span class="cm">-- Foreign Key</span><br>CREATE TABLE Enrollments (<br>&nbsp;&nbsp;EnrollID INT <span class="kw">PRIMARY KEY</span>,<br>&nbsp;&nbsp;StudentID INT <span class="kw">FOREIGN KEY</span> REFERENCES Students(StudentID)<br>);</div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div><strong>Primary Key:</strong> Uniquely identifies each row in a table; cannot be NULL; only one per table.</li>
+        <li><div class="bullet-dot"></div><strong>Foreign Key:</strong> A field referencing the PK of another table; enforces referential integrity.</li>
+        <li><div class="bullet-dot"></div>A table can have only one Primary Key but multiple Foreign Keys.</li>
+        <li><div class="bullet-dot"></div>Foreign Keys prevent orphaned records — you can't insert a FK value that doesn't exist in the parent table.</li>
+        <li><div class="bullet-dot"></div><strong>Referential Integrity:</strong> The constraint that ensures FK values always match a valid PK or are NULL.</li>
+        <li><div class="bullet-dot"></div>ON DELETE CASCADE automatically removes child records when the parent record is deleted.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which key uniquely identifies a record in a table?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Primary Key ✓</div><div class="option"><div class="option-letter">B</div>Foreign Key</div><div class="option"><div class="option-letter">C</div>Candidate Key</div><div class="option"><div class="option-letter">D</div>Composite Key</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> A Foreign Key references which key of another table?</div><div class="options"><div class="option"><div class="option-letter">A</div>Alternate Key</div><div class="option correct"><div class="option-letter">B</div>Primary Key ✓</div><div class="option"><div class="option-letter">C</div>Unique Key</div><div class="option"><div class="option-letter">D</div>Index Key</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Can a Primary Key have NULL values?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>No, never ✓</div><div class="option"><div class="option-letter">B</div>Yes, always</div><div class="option"><div class="option-letter">C</div>Only if declared</div><div class="option"><div class="option-letter">D</div>Depends on DBMS</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> What is referential integrity and how do Foreign Keys enforce it?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> Can a table have multiple Foreign Keys? Give an example.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 3. SQL JOINS ─── -->
+<div id="sql-joins" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">🔗</div><div><h3>SQL Joins</h3><p>Combining data from multiple tables using different join types</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text"><strong>SQL Joins</strong> combine rows from two or more tables based on a related column. They are fundamental for querying relational databases.</p>
+      <table class="info-table">
+        <tr><th>Join Type</th><th>Returns</th><th>Unmatched Rows</th></tr>
+        <tr><td><strong>INNER JOIN</strong></td><td>Rows matching in BOTH tables</td><td>Excluded from both sides</td></tr>
+        <tr><td><strong>LEFT JOIN</strong></td><td>All rows from left table + matches from right</td><td>Right side shows NULL</td></tr>
+        <tr><td><strong>RIGHT JOIN</strong></td><td>All rows from right table + matches from left</td><td>Left side shows NULL</td></tr>
+        <tr><td><strong>FULL OUTER JOIN</strong></td><td>All rows from both tables</td><td>NULLs on both sides</td></tr>
+        <tr><td><strong>CROSS JOIN</strong></td><td>Cartesian product of both tables</td><td>No condition needed</td></tr>
+        <tr><td><strong>SELF JOIN</strong></td><td>A table joined with itself</td><td>Used for hierarchical data</td></tr>
+      </table>
+      <div class="code-block"><span class="cm">-- INNER JOIN Example</span><br><span class="kw">SELECT</span> s.Name, e.Course<br><span class="kw">FROM</span> Students s<br><span class="kw">INNER JOIN</span> Enrollments e ON s.StudentID = e.StudentID;<br><br><span class="cm">-- LEFT JOIN Example</span><br><span class="kw">SELECT</span> s.Name, e.Course<br><span class="kw">FROM</span> Students s<br><span class="kw">LEFT JOIN</span> Enrollments e ON s.StudentID = e.StudentID;</div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div><strong>INNER JOIN:</strong> Returns only the rows where there is a match in both tables.</li>
+        <li><div class="bullet-dot"></div><strong>LEFT JOIN:</strong> Returns all rows from the left table, with NULLs for non-matching right rows.</li>
+        <li><div class="bullet-dot"></div><strong>RIGHT JOIN:</strong> Returns all rows from the right table, with NULLs for non-matching left rows.</li>
+        <li><div class="bullet-dot"></div><strong>FULL OUTER JOIN:</strong> Returns all rows from both tables; NULLs fill in where no match exists.</li>
+        <li><div class="bullet-dot"></div><strong>CROSS JOIN:</strong> Returns the Cartesian product — every combination of rows from both tables.</li>
+        <li><div class="bullet-dot"></div>Joins are performed using the ON clause to specify the matching condition.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which JOIN returns only matching rows from both tables?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>INNER JOIN ✓</div><div class="option"><div class="option-letter">B</div>LEFT JOIN</div><div class="option"><div class="option-letter">C</div>FULL OUTER JOIN</div><div class="option"><div class="option-letter">D</div>CROSS JOIN</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> What does a LEFT JOIN return for non-matching right rows?</div><div class="options"><div class="option"><div class="option-letter">A</div>Zero</div><div class="option correct"><div class="option-letter">B</div>NULL ✓</div><div class="option"><div class="option-letter">C</div>Empty string</div><div class="option"><div class="option-letter">D</div>Error</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> CROSS JOIN produces a?</div><div class="options"><div class="option"><div class="option-letter">A</div>Subset of rows</div><div class="option"><div class="option-letter">B</div>Union of tables</div><div class="option correct"><div class="option-letter">C</div>Cartesian product ✓</div><div class="option"><div class="option-letter">D</div>Intersection</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Explain the difference between LEFT JOIN and INNER JOIN with an example.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> When would you use a SELF JOIN? Give a real-world scenario.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 4. ACID PROPERTIES ─── -->
+<div id="acid" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">⚗️</div><div><h3>ACID Properties</h3><p>The four pillars of reliable database transactions</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text"><strong>ACID</strong> is a set of properties that guarantee database transactions are processed reliably. These properties are critical for systems where data integrity is essential (e.g., banking, e-commerce).</p>
+      <table class="info-table">
+        <tr><th>Property</th><th>Meaning</th><th>Example</th></tr>
+        <tr><td><strong>Atomicity</strong></td><td>All operations in a transaction succeed or all fail — no partial execution</td><td>Bank transfer: debit + credit both succeed or both rollback</td></tr>
+        <tr><td><strong>Consistency</strong></td><td>A transaction brings the database from one valid state to another</td><td>Account balance never goes negative if a rule prevents it</td></tr>
+        <tr><td><strong>Isolation</strong></td><td>Concurrent transactions don't interfere with each other</td><td>Two users booking the last seat don't both succeed</td></tr>
+        <tr><td><strong>Durability</strong></td><td>Once committed, a transaction is permanently saved even after system failure</td><td>Payment confirmed survives a server crash</td></tr>
+      </table>
+      <div class="key-concepts">
+        <div class="concept-chip">🔵 Atomicity <span>"All or nothing"</span></div>
+        <div class="concept-chip">🟢 Consistency <span>"Valid state always"</span></div>
+        <div class="concept-chip">🟡 Isolation <span>"Independent"</span></div>
+        <div class="concept-chip">🔴 Durability <span>"Permanent commit"</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div><strong>Atomicity:</strong> A transaction is treated as a single unit — it either fully completes or fully rolls back.</li>
+        <li><div class="bullet-dot"></div><strong>Consistency:</strong> Every transaction maintains the database integrity rules and constraints.</li>
+        <li><div class="bullet-dot"></div><strong>Isolation:</strong> Concurrent transactions are executed as if they were sequential; results are hidden until committed.</li>
+        <li><div class="bullet-dot"></div><strong>Durability:</strong> Committed data persists permanently, even in case of power failure or crash.</li>
+        <li><div class="bullet-dot"></div>ACID is ensured by DBMS features like transaction logs, rollback mechanisms, and locks.</li>
+        <li><div class="bullet-dot"></div>NoSQL databases sometimes sacrifice ACID for performance, offering BASE (Basically Available, Soft-state, Eventually consistent).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which ACID property ensures "all or nothing" execution?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Atomicity ✓</div><div class="option"><div class="option-letter">B</div>Consistency</div><div class="option"><div class="option-letter">C</div>Isolation</div><div class="option"><div class="option-letter">D</div>Durability</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> Which property ensures committed data survives system crashes?</div><div class="options"><div class="option"><div class="option-letter">A</div>Atomicity</div><div class="option"><div class="option-letter">B</div>Isolation</div><div class="option"><div class="option-letter">C</div>Consistency</div><div class="option correct"><div class="option-letter">D</div>Durability ✓</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Isolation in ACID prevents?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Dirty reads between concurrent transactions ✓</div><div class="option"><div class="option-letter">B</div>Data loss on commit</div><div class="option"><div class="option-letter">C</div>Schema errors</div><div class="option"><div class="option-letter">D</div>Duplicate primary keys</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Explain Atomicity using a bank transfer example.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> How does Isolation handle two users trying to book the same last ticket simultaneously?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 5. DATA STRUCTURES ─── -->
+<div id="ds" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">📦</div><div><h3>Data Structures</h3><p>Organizing and storing data efficiently for optimal access</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text">A <strong>Data Structure</strong> is a way of organizing, storing, and managing data in memory so it can be accessed and modified efficiently. Choosing the right data structure is critical for algorithm performance.</p>
+      <table class="info-table">
+        <tr><th>Structure</th><th>Access</th><th>Insert</th><th>Best Use Case</th></tr>
+        <tr><td><strong>Array</strong></td><td>O(1)</td><td>O(n)</td><td>Fixed-size sequential data</td></tr>
+        <tr><td><strong>Linked List</strong></td><td>O(n)</td><td>O(1)</td><td>Frequent insertions/deletions</td></tr>
+        <tr><td><strong>Stack</strong></td><td>O(1) top</td><td>O(1)</td><td>Undo operations, backtracking</td></tr>
+        <tr><td><strong>Queue</strong></td><td>O(1) front</td><td>O(1)</td><td>Scheduling, BFS traversal</td></tr>
+        <tr><td><strong>Hash Table</strong></td><td>O(1) avg</td><td>O(1) avg</td><td>Fast key-value lookup</td></tr>
+        <tr><td><strong>Binary Tree</strong></td><td>O(log n)</td><td>O(log n)</td><td>Searching and sorting</td></tr>
+        <tr><td><strong>Graph</strong></td><td>O(V+E)</td><td>O(1)</td><td>Networks, maps, social connections</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div>Data structures are classified as <strong>Linear</strong> (Array, Stack, Queue, Linked List) and <strong>Non-Linear</strong> (Trees, Graphs).</li>
+        <li><div class="bullet-dot"></div>Arrays offer O(1) random access but slow insertion/deletion at arbitrary positions.</li>
+        <li><div class="bullet-dot"></div>Hash Tables provide average O(1) access and insertion using a hash function and collision handling.</li>
+        <li><div class="bullet-dot"></div>Trees represent hierarchical data; Binary Search Trees allow O(log n) search.</li>
+        <li><div class="bullet-dot"></div>Graphs model networks and relationships; traversed with BFS or DFS algorithms.</li>
+        <li><div class="bullet-dot"></div>Choosing the correct data structure directly impacts the time and space complexity of a program.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which data structure gives O(1) random access?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Array ✓</div><div class="option"><div class="option-letter">B</div>Linked List</div><div class="option"><div class="option-letter">C</div>Graph</div><div class="option"><div class="option-letter">D</div>Stack</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> Hash Tables handle collisions using?</div><div class="options"><div class="option"><div class="option-letter">A</div>Sorting</div><div class="option correct"><div class="option-letter">B</div>Chaining or Open Addressing ✓</div><div class="option"><div class="option-letter">C</div>Indexing</div><div class="option"><div class="option-letter">D</div>Recursion</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Which is a non-linear data structure?</div><div class="options"><div class="option"><div class="option-letter">A</div>Array</div><div class="option"><div class="option-letter">B</div>Stack</div><div class="option"><div class="option-letter">C</div>Queue</div><div class="option correct"><div class="option-letter">D</div>Tree ✓</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> When would you use a Hash Table over an Array? Explain with an example.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> What is the difference between linear and non-linear data structures?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 6. STACK vs QUEUE ─── -->
+<div id="stack-queue" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">📚</div><div><h3>Stack vs Queue</h3><p>Two fundamental linear data structures with opposite ordering rules</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text">A <strong>Stack</strong> follows <strong>LIFO</strong> (Last In, First Out) — the last element added is the first to be removed. Think of a stack of plates. A <strong>Queue</strong> follows <strong>FIFO</strong> (First In, First Out) — the first element added is the first removed. Think of a line at a ticket counter.</p>
+      <table class="info-table">
+        <tr><th>Feature</th><th>Stack</th><th>Queue</th></tr>
+        <tr><td>Order</td><td>LIFO (Last In First Out)</td><td>FIFO (First In First Out)</td></tr>
+        <tr><td>Insert operation</td><td>Push (top)</td><td>Enqueue (rear)</td></tr>
+        <tr><td>Remove operation</td><td>Pop (top)</td><td>Dequeue (front)</td></tr>
+        <tr><td>Peek</td><td>Top element</td><td>Front element</td></tr>
+        <tr><td>Real-world use</td><td>Undo, Recursion call stack, Browser back</td><td>Print queue, BFS, CPU scheduling</td></tr>
+      </table>
+      <div class="code-block"><span class="cm">-- Stack (Python)</span><br>stack = []<br>stack.append(1)  <span class="cm"># Push</span><br>stack.pop()      <span class="cm"># Pop → returns 1</span><br><br><span class="cm">-- Queue (Python)</span><br>from collections import deque<br>queue = deque()<br>queue.append(1)   <span class="cm"># Enqueue</span><br>queue.popleft()   <span class="cm"># Dequeue → returns 1</span></div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div><strong>Stack = LIFO:</strong> Last In, First Out. Operations: Push (add), Pop (remove), Peek (view top).</li>
+        <li><div class="bullet-dot"></div><strong>Queue = FIFO:</strong> First In, First Out. Operations: Enqueue (add), Dequeue (remove), Front (view first).</li>
+        <li><div class="bullet-dot"></div>Stack use cases: function call stack, undo/redo, expression evaluation, browser history.</li>
+        <li><div class="bullet-dot"></div>Queue use cases: CPU task scheduling, print spooling, BFS graph traversal, message queues.</li>
+        <li><div class="bullet-dot"></div><strong>Circular Queue:</strong> A queue where the last position connects back to the first — efficient memory usage.</li>
+        <li><div class="bullet-dot"></div><strong>Priority Queue:</strong> A queue where each element has a priority; higher priority elements are dequeued first.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> Which data structure follows LIFO?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Stack ✓</div><div class="option"><div class="option-letter">B</div>Queue</div><div class="option"><div class="option-letter">C</div>Array</div><div class="option"><div class="option-letter">D</div>Linked List</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> What is the operation to add an element to a Queue called?</div><div class="options"><div class="option"><div class="option-letter">A</div>Push</div><div class="option correct"><div class="option-letter">B</div>Enqueue ✓</div><div class="option"><div class="option-letter">C</div>Insert</div><div class="option"><div class="option-letter">D</div>Append</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Which is a real-world example of a Queue?</div><div class="options"><div class="option"><div class="option-letter">A</div>Browser back button</div><div class="option"><div class="option-letter">B</div>Undo feature</div><div class="option correct"><div class="option-letter">C</div>Print spooling ✓</div><div class="option"><div class="option-letter">D</div>Function call stack</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Explain with an analogy why a Stack uses LIFO ordering.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> What is a Priority Queue and how does it differ from a regular Queue?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 7. LINKED LIST ─── -->
+<div id="linked-list" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">🔗</div><div><h3>Linked List</h3><p>A dynamic linear data structure made of connected nodes</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text">A <strong>Linked List</strong> is a linear data structure where each element (called a <strong>node</strong>) contains data and a pointer to the next node. Unlike arrays, linked lists don't require contiguous memory allocation, making insertions and deletions efficient.</p>
+      <table class="info-table">
+        <tr><th>Type</th><th>Structure</th><th>Traversal</th></tr>
+        <tr><td><strong>Singly Linked</strong></td><td>Each node → next node only</td><td>Forward only</td></tr>
+        <tr><td><strong>Doubly Linked</strong></td><td>Each node → next + previous</td><td>Forward and backward</td></tr>
+        <tr><td><strong>Circular Linked</strong></td><td>Last node points back to head</td><td>Loops continuously</td></tr>
+      </table>
+      <div class="code-block"><span class="cm">// Node Structure (C-style)</span><br>struct Node {<br>&nbsp;&nbsp;int data;<br>&nbsp;&nbsp;struct Node* next;<br>};<br><br><span class="cm">// Singly Linked List: Head → [1|→] → [2|→] → [3|NULL]</span></div>
+      <div class="key-concepts">
+        <div class="concept-chip">➕ Insert O(1) <span>At head or tail</span></div>
+        <div class="concept-chip">🔍 Search O(n) <span>Sequential traversal</span></div>
+        <div class="concept-chip">❌ Delete O(1) <span>With pointer access</span></div>
+        <div class="concept-chip">💾 Dynamic Size <span>No fixed allocation</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div>A Linked List is a chain of nodes; each node stores data and a reference (pointer) to the next node.</li>
+        <li><div class="bullet-dot"></div><strong>Singly Linked List:</strong> One direction traversal; each node has next pointer only.</li>
+        <li><div class="bullet-dot"></div><strong>Doubly Linked List:</strong> Bi-directional traversal; each node has both next and previous pointers.</li>
+        <li><div class="bullet-dot"></div><strong>Circular Linked List:</strong> The last node's next pointer points back to the head node.</li>
+        <li><div class="bullet-dot"></div>Advantage over arrays: Dynamic size; O(1) insertion/deletion at known positions.</li>
+        <li><div class="bullet-dot"></div>Disadvantage: No random access — searching requires O(n) traversal from the head.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> What does each node in a Singly Linked List contain?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Data + pointer to next node ✓</div><div class="option"><div class="option-letter">B</div>Data + index</div><div class="option"><div class="option-letter">C</div>Data + two pointers</div><div class="option"><div class="option-letter">D</div>Data only</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> What is the time complexity of searching in a Linked List?</div><div class="options"><div class="option"><div class="option-letter">A</div>O(1)</div><div class="option"><div class="option-letter">B</div>O(log n)</div><div class="option correct"><div class="option-letter">C</div>O(n) ✓</div><div class="option"><div class="option-letter">D</div>O(n²)</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Which type of Linked List allows traversal in both directions?</div><div class="options"><div class="option"><div class="option-letter">A</div>Singly Linked List</div><div class="option correct"><div class="option-letter">B</div>Doubly Linked List ✓</div><div class="option"><div class="option-letter">C</div>Circular Linked List</div><div class="option"><div class="option-letter">D</div>Array List</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Compare Array and Linked List in terms of memory allocation and access time.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> Describe how you would reverse a Singly Linked List.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 8. BINARY TREES ─── -->
+<div id="binary-tree" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">🌳</div><div><h3>Binary Trees</h3><p>Hierarchical structure where each node has at most two children</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text">A <strong>Binary Tree</strong> is a tree data structure where each node has at most <strong>two children</strong>: a left child and a right child. A <strong>Binary Search Tree (BST)</strong> adds the rule: left child values are smaller than the parent, and right child values are greater.</p>
+      <table class="info-table">
+        <tr><th>Traversal</th><th>Order</th><th>Output (example tree)</th></tr>
+        <tr><td><strong>Inorder</strong></td><td>Left → Root → Right</td><td>Sorted ascending (BST)</td></tr>
+        <tr><td><strong>Preorder</strong></td><td>Root → Left → Right</td><td>Used to copy a tree</td></tr>
+        <tr><td><strong>Postorder</strong></td><td>Left → Right → Root</td><td>Used to delete a tree</td></tr>
+        <tr><td><strong>Level Order</strong></td><td>Level by level (BFS)</td><td>Breadth-first traversal</td></tr>
+      </table>
+      <div class="code-block"><span class="cm">// BST structure</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8<br>&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;\<br>&nbsp;&nbsp;&nbsp;3&nbsp;&nbsp;&nbsp;&nbsp;10<br>&nbsp;&nbsp;/&nbsp;\&nbsp;&nbsp;&nbsp;&nbsp;\<br>&nbsp;1&nbsp;&nbsp;6&nbsp;&nbsp;&nbsp;&nbsp;14<br><span class="cm">// Inorder: 1, 3, 6, 8, 10, 14 (sorted!)</span></div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div>A Binary Tree has at most 2 children per node (left and right).</li>
+        <li><div class="bullet-dot"></div><strong>BST Rule:</strong> Left subtree values &lt; root; right subtree values &gt; root.</li>
+        <li><div class="bullet-dot"></div>BST Search, Insert, Delete: O(log n) on average; O(n) worst case (unbalanced).</li>
+        <li><div class="bullet-dot"></div><strong>Inorder traversal</strong> of a BST gives values in sorted (ascending) order.</li>
+        <li><div class="bullet-dot"></div><strong>Balanced BSTs</strong> (AVL Tree, Red-Black Tree) maintain O(log n) height for guaranteed performance.</li>
+        <li><div class="bullet-dot"></div>Binary Trees are used in expression parsing, Huffman encoding, and database indexing (B-Trees).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> In a Binary Search Tree, inorder traversal gives?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>Values in sorted order ✓</div><div class="option"><div class="option-letter">B</div>Reverse sorted order</div><div class="option"><div class="option-letter">C</div>Random order</div><div class="option"><div class="option-letter">D</div>Level-by-level order</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> What is the max number of children in a Binary Tree node?</div><div class="options"><div class="option"><div class="option-letter">A</div>1</div><div class="option correct"><div class="option-letter">B</div>2 ✓</div><div class="option"><div class="option-letter">C</div>3</div><div class="option"><div class="option-letter">D</div>Unlimited</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> AVL Trees are used to?</div><div class="options"><div class="option"><div class="option-letter">A</div>Store graph edges</div><div class="option correct"><div class="option-letter">B</div>Keep BST balanced for O(log n) operations ✓</div><div class="option"><div class="option-letter">C</div>Sort arrays in-place</div><div class="option"><div class="option-letter">D</div>Index linked lists</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Explain the difference between Inorder, Preorder, and Postorder traversals.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> What is a balanced BST and why is it important for performance?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── 9. TIME COMPLEXITY ─── -->
+<div id="big-o" class="topic-content">
+  <div class="topic-banner"><div class="topic-banner-icon">⏱️</div><div><h3>Time Complexity (Big-O)</h3><p>Measuring algorithm efficiency as input size grows</p></div></div>
+
+  <section class="card section-explain">
+    <div class="card-header"><div class="card-icon">📖</div><div><h2>Topic Explanation</h2><p>Understand the concept clearly</p></div></div>
+    <div class="card-body">
+      <p class="explain-text"><strong>Big-O Notation</strong> describes the worst-case time or space an algorithm uses as input size (n) grows. It helps compare algorithms independently of hardware or language differences.</p>
+      <table class="info-table">
+        <tr><th>Notation</th><th>Name</th><th>Example</th><th>Speed</th></tr>
+        <tr><td><strong>O(1)</strong></td><td>Constant</td><td>Array index access</td><td>⚡ Fastest</td></tr>
+        <tr><td><strong>O(log n)</strong></td><td>Logarithmic</td><td>Binary search</td><td>🚀 Very fast</td></tr>
+        <tr><td><strong>O(n)</strong></td><td>Linear</td><td>Linear search</td><td>✅ Good</td></tr>
+        <tr><td><strong>O(n log n)</strong></td><td>Linearithmic</td><td>Merge sort, Quick sort</td><td>🟡 Acceptable</td></tr>
+        <tr><td><strong>O(n²)</strong></td><td>Quadratic</td><td>Bubble sort, nested loops</td><td>🔴 Slow</td></tr>
+        <tr><td><strong>O(2ⁿ)</strong></td><td>Exponential</td><td>Recursive Fibonacci</td><td>💀 Very slow</td></tr>
+        <tr><td><strong>O(n!)</strong></td><td>Factorial</td><td>Travelling Salesman (brute force)</td><td>❌ Avoid</td></tr>
+      </table>
+      <div class="key-concepts">
+        <div class="concept-chip">⚡ O(1) <span>Best — Constant</span></div>
+        <div class="concept-chip">🚀 O(log n) <span>Binary Search</span></div>
+        <div class="concept-chip">✅ O(n) <span>Linear scan</span></div>
+        <div class="concept-chip">🔴 O(n²) <span>Nested loops</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-summary">
+    <div class="card-header"><div class="card-icon">📝</div><div><h2>Summary Notes</h2><p>Quick revision bullet points</p></div></div>
+    <div class="card-body">
+      <ul class="summary-list">
+        <li><div class="bullet-dot"></div>Big-O describes the <strong>worst-case</strong> performance of an algorithm as n (input size) approaches infinity.</li>
+        <li><div class="bullet-dot"></div><strong>O(1):</strong> Constant time — doesn't depend on input size (e.g., accessing an array element by index).</li>
+        <li><div class="bullet-dot"></div><strong>O(log n):</strong> Logarithmic — input is halved each step (e.g., Binary Search on sorted array).</li>
+        <li><div class="bullet-dot"></div><strong>O(n):</strong> Linear — time grows proportionally with input (e.g., looping through a list once).</li>
+        <li><div class="bullet-dot"></div><strong>O(n²):</strong> Quadratic — common with nested loops; doubles in cost exponentially (e.g., Bubble Sort).</li>
+        <li><div class="bullet-dot"></div><strong>Space Complexity:</strong> Also expressed in Big-O; measures memory usage relative to input size.</li>
+        <li><div class="bullet-dot"></div>Always aim to reduce complexity: O(n²) → O(n log n) → O(n) → O(log n) → O(1).</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card section-mcq">
+    <div class="card-header"><div class="card-icon">✅</div><div><h2>MCQ Questions</h2><p>Test your knowledge</p></div></div>
+    <div class="card-body">
+      <div class="mcq-list">
+        <div><div class="mcq-q"><span>Q1.</span> What is the time complexity of Binary Search?</div><div class="options"><div class="option"><div class="option-letter">A</div>O(1)</div><div class="option correct"><div class="option-letter">B</div>O(log n) ✓</div><div class="option"><div class="option-letter">C</div>O(n)</div><div class="option"><div class="option-letter">D</div>O(n²)</div></div></div>
+        <div><div class="mcq-q"><span>Q2.</span> Bubble Sort has a worst-case complexity of?</div><div class="options"><div class="option"><div class="option-letter">A</div>O(n log n)</div><div class="option"><div class="option-letter">B</div>O(n)</div><div class="option correct"><div class="option-letter">C</div>O(n²) ✓</div><div class="option"><div class="option-letter">D</div>O(log n)</div></div></div>
+        <div><div class="mcq-q"><span>Q3.</span> Accessing an element by array index is?</div><div class="options"><div class="option correct"><div class="option-letter">A</div>O(1) ✓</div><div class="option"><div class="option-letter">B</div>O(log n)</div><div class="option"><div class="option-letter">C</div>O(n)</div><div class="option"><div class="option-letter">D</div>O(n²)</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-short">
+    <div class="card-header"><div class="card-icon">💬</div><div><h2>Short Answer Questions</h2><p>Write your answers below</p></div></div>
+    <div class="card-body">
+      <div class="sa-list">
+        <div><div class="sa-q"><span>Q1.</span> Why do we use Big-O notation instead of measuring actual runtime in seconds?</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q2.</span> A function has two nested loops over n elements. What is its Big-O complexity? Explain.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+        <div><div class="sa-q"><span>Q3.</span> Compare Merge Sort (O(n log n)) and Bubble Sort (O(n²)) for n=10,000 elements.</div><textarea class="sa-input" placeholder="Type your answer here..."></textarea></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary">Evaluate Answers ✨</button><button class="btn btn-outline">Clear All</button></div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <p>Built with ❤️ for <strong>AI Study Assistant</strong> &nbsp;|&nbsp; CS Topics: Databases & Data Structures &nbsp;|&nbsp; Student Project 2026</p>
+</footer>
+
+<script>
+  function showTopic(id, btn) {
+    // Hide all topic contents
+    document.querySelectorAll('.topic-content').forEach(el => el.classList.remove('active'));
+    // Deactivate all buttons
+    document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+    // Show selected topic
+    document.getElementById(id).classList.add('active');
+    // Activate clicked button
+    btn.classList.add('active');
+    // Smooth scroll to top of main content
+    window.scrollTo({ top: document.querySelector('.topic-bar').offsetTop - 10, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
